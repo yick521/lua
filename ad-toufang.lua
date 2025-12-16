@@ -1,0 +1,305 @@
+local cjson = require("cjson.safe");
+
+local producer = require("resty.kafka.producer");
+
+local uuid = require "resty.uuid"
+local osnow=ngx.now()*1000;
+
+local zgConfig = require "utils.zgConfig"
+local broker_list = zgConfig.broker_list;
+
+local topic = "sdklua_online";
+local key = nil;
+local headers = cjson.encode(ngx.req.get_headers());
+
+local args="";
+local return_code = 0;
+local return_message = "";
+local method = ngx.req.get_method();
+if "GET" == method then
+    args = ngx.req.get_uri_args()
+else
+    ngx.req.read_body()
+    args = ngx.req.get_post_args()
+end
+local debug = args['debug'];
+if debug == "1" then
+    debug = 1;
+else
+    debug = 0;
+end
+
+local zg_appid = args['zg_appid'];
+local lid = args['lid'];
+local channel_id = args['channel_id'];
+local utm_campaign = args['utm_campaign'];
+local utm_source = args['utm_source'];
+local utm_medium = args['utm_medium'];
+local utm_term = args['utm_term'];
+local utm_content = args['utm_content'];
+local channel_ad_name = args['channel_ad_name'];
+local csite = args['csite'];
+local ados = args['os'];
+local channel_campaign_name = args['channel_campaign_name'];
+local ip = args['ip'];
+local ua = args['ua'];
+ua=string.gsub(ua,"\\","\\\\")
+local channel_account_id = args['channel_account_id'];
+local mac = args['mac'];
+local mac1 = args['mac1'];
+local convert_id = args['convert_id'];
+local channel_campaign_id = args['channel_campaign_id'];
+local callback_url = args['callback_url'];
+local geo = args['geo'];
+local channel_click_id = args['channel_click_id'];
+local ctype = args['ctype'];
+local channel_ad_id = args['channel_ad_id'];
+local click_time = args['click_time'];
+local imei = args['imei'];
+local idfa = args['idfa'];
+local idfa_md5 = args['idfa_md5'];
+local sl = args['sl'];
+local model = args['model'];
+local union_site = args['union_site'];
+local android_id = args['android_id'];
+local oaid = args['oaid'];
+local oaid_md5 = args['oaid_md5'];
+local channel_adgroup_name = args['channel_adgroup_name'];
+local channel_adgroup_id = args['channel_adgroup_id'];
+local channel_keyword_id = args['channel_keyword_id'];
+
+local requers_id = args['requers_id'];
+
+local app_key = args['app_key'];
+local lname = args['lname'];
+local channel_type = args['channel_type'];
+local push_type = args['push_type'];
+local akey = args['akey'];
+local token = args['token'];
+local muid = args['muid'];
+local company = args['company'];
+local auth_account = args['auth_account'];
+
+if company == nil then
+    company = "";
+end
+
+if auth_account == nil then
+    auth_account = "";
+end
+
+if app_key == nil then
+    app_key = "";
+end
+
+if lname == nil then
+    lname = "";
+end
+
+if zg_appid == nil then
+    zg_appid = "";
+end
+if lid == nil then
+    lid = "";
+end
+if channel_id == nil then
+    channel_id = 0;
+end
+if utm_campaign == nil then
+    utm_campaign = "";
+end
+if utm_source == nil then
+    utm_source = "";
+end
+if utm_medium == nil then
+    utm_medium = "";
+end
+if utm_term == nil then
+    utm_term = "";
+end
+if utm_content == nil then
+    utm_content = "";
+end
+if channel_ad_name == nil then
+    channel_ad_name = "";
+end
+if csite == nil then
+    csite = 0;
+end
+
+if ados == nil then
+    ados = 3;
+elseif(ados == "android") then
+    ados = 0
+elseif(ados == "ios") then
+    ados = 1
+end
+
+
+
+local pl = ""
+--if(ados == "0") then
+--      pl = "and"
+--elseif(ados == "1") then
+--      pl = "ios"
+--elseif(ados == "3") then
+--      pl = "other"
+--end
+
+if channel_campaign_name == nil then
+    channel_campaign_name = "";
+end
+if ip == nil then
+    ip = "";
+end
+if ua == nil then
+    ua = "";
+end
+ua=string.gsub(ua,"//","////")
+if channel_account_id == nil then
+    channel_account_id = 0;
+end
+if mac == nil or mac == "NULL" then
+    mac = "";
+end
+if mac1 == nil then
+    mac1 = "";
+end
+if convert_id == nil then
+    convert_id = 0;
+end
+if channel_campaign_id == nil or channel_campaign_id == "NULL" or string.match(channel_campaign_id,"__")~=nil then
+    channel_campaign_id = 0;
+end
+if callback_url == nil then
+    callback_url = "";
+end
+if geo == nil then
+    geo = "";
+end
+if channel_click_id == nil then
+    channel_click_id = "";
+end
+if ctype == nil then
+    ctype = 0;
+end
+if channel_ad_id == nil or channel_ad_id == "NULL" or string.match(channel_ad_id,"__")~=nil then
+    channel_ad_id = 0;
+end
+if click_time == nil then
+    click_time = "";
+end
+if imei == nil or imei == "NULL" or string.match(imei,"__")~=nil then
+    imei = "";
+end
+if idfa == nil or idfa == "NULL" or string.match(idfa,"__")~=nil then
+    idfa = "";
+end
+if idfa_md5 == nil or string.match(idfa_md5,"__")~=nil then
+    idfa_md5 = "";
+end
+if sl == nil then
+    sl = "";
+end
+if model == nil then
+    model = "";
+end
+if union_site == nil then
+    union_site = 0;
+end
+if android_id == nil or android_id == "NULL" or string.match(android_id,"__")~=nil then
+    android_id = "";
+end
+if oaid == nil or oaid == "NULL" or string.match(oaid,"__")~=nil then
+    oaid = "";
+end
+if oaid_md5 == nil  or oaid_md5 == "NULL" or string.match(oaid_md5,"__")~=nil then
+    oaid_md5 = "";
+end
+if channel_adgroup_name == nil or channel_adgroup_name == "NULL" then
+    channel_adgroup_name = "";
+end
+if channel_adgroup_id == nil or channel_adgroup_id == "NULL" then
+    channel_adgroup_id = 0;
+end
+if channel_keyword_id == nil or channel_keyword_id == "NULL" or string.match(channel_keyword_id,"__")~=nil then
+    channel_keyword_id = 0;
+end
+if requers_id == nil then
+    requers_id = "";
+end
+
+if channel_type == nil then
+    channel_type = "";
+end
+
+if push_type == nil then
+    push_type = "";
+end
+
+if akey == nil then
+    akey = "";
+end
+
+if token == nil then
+    token = "";
+end
+
+if muid == nil then
+    muid = "";
+end
+
+
+local myIP = ngx.req.get_headers()["X-Real-IP"]
+if myIP == nil then
+   myIP = ngx.req.get_headers()["x_forwarded_for"]
+end
+if myIP == nil then
+   myIP = ngx.req.get_headers()["Proxy-Client-IP"]
+end
+if myIP == nil then
+   myIP = ngx.req.get_headers()["WL-Proxy-Client-IP"]
+end
+if myIP == nil then
+   myIP = ngx.req.get_headers()["http_x_forwarded_for"]
+end
+if myIP == nil or myIP=="-" then
+   myIP = ngx.var.remote_addr
+end
+if type(myIP) == "table" then
+   myIP = tostring(myIP[1])
+end
+local has_split = ngx.re.match(myIP,[[\,]],"o");
+if has_split then
+    myIP=string.match(myIP,"%d+[\\.]?%d+[\\.]?%d+[\\.]?%d+[\\.]?");
+end
+local url = ngx.var.scheme.."://"..ngx.var.host..ngx.var.request_uri;
+
+local did = uuid.generate_random();
+local sid = osnow;
+
+local time_zone=28800000;
+
+
+local ut=os.date("%Y-%m-%d %H:%M:%S");
+local event = '{"data":[{"dt":"adtf","pr":{"$channel_adgroup_id":'..channel_adgroup_id..',"$muid":"'..muid..'","$channel_click_id":"'..channel_click_id..'","$channel_adgroup_name":"'..channel_adgroup_name..'","$company":"'..company..'","$auth_account":"'..auth_account..'","$channel_ad_id":'..channel_ad_id..',"$channel_keyword_id":'..channel_keyword_id..',"$channel_ad_name":"'..channel_ad_name..'","$channel_campaign_id":'..channel_campaign_id..',"$requers_id":"'..requers_id..'","$csite":'..csite..',"$geo":"'..geo..'","$ctype":'..ctype..',"$imei":"'..imei..'","$idfa":"'..idfa..'","$idfa_md5":"'..idfa_md5..'","$android_id":"'..android_id..'","$oaid":"'..oaid..'","$oaid_md5":"'..oaid_md5..'","$ados":'..ados..',"$mac":"'..mac..'","$mac1":"'..mac1..'","$convert_id":'..convert_id..',"$channel_campaign_name":"'..channel_campaign_name..'","$ip":"'..ip..'","$ua":"'..ua..'","$channel_account_id":'..channel_account_id..',"$callback_url":"'..callback_url..'","$model":"'..model..'","$union_site":'..union_site..',"$lid":'..lid..',"$lname":"'..lname..'","$channel_type":"'..channel_type..'","$push_type":"'..push_type..'","$akey":"'..akey..'","$token":"'..token..'","$zg_appid":'..zg_appid..',"$utm_campaign":"'..utm_campaign..'","$utm_source":"'..utm_source..'","$utm_medium":"'..utm_medium..'","$utm_term":"'..utm_term..'","$utm_content":"'..utm_content..'","$channel_id":'..channel_id..',"$click_time":'..click_time..',"$sl":"'..sl..'"}}],"sln":"itn","pl":"js","sdk":"zg_adtoufang","sdkv":"2.0","owner":"zg","ut":"'..ut..'","tz":'..time_zone..',"debug":'..debug..',"ak":"'..app_key..'","usr":{"did":"'..did..'"}}';
+local c_event = '{"event":'..cjson.encode(event)..'}';
+
+local res = {
+        Now=osnow,
+        Ip=myIP,
+        Method=method,
+        Header=headers,
+        Args=c_event
+}
+
+local message=cjson.encode(res);
+
+local bp = producer:new(broker_list, { producer_type = "async" })
+local ok, err = bp:send(topic, key, message)
+if not ok then
+    ngx.say("send err:", err)
+    return_code=-10001;
+        return
+end
+ngx.say("send success, ok:", ok)
